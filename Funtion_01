@@ -1,13 +1,30 @@
-#include <Servo.h>  // Servo 라이브러리 호출
+#include <Servo.h>
 int echo = 8;
 int trig = 12;
 double setpoint= 20.0;
+double previousError = 0;
+unsigned long lastTimePID = 0;
+double integral = 0;
+int ServoOutput;
+int scenter = 90;
 
+// 변수 선언
+Servo myServo;  // Servo 객체 선언
+double Input;   // Input 변수
+double Output;  // Output 변수
+double kp = 2.0, ki = 0.1, kd = 1.0;  // PID 상수
+
+double readDistance();
+double computePID(double setpoint, double input);  // compute -> computePID로 수정
+double customConstrain(double A);  // customConstain -> customConstrain으로 수정
 
 void setup(){
   Serial.begin(9600);
   pinMode(trig, OUTPUT);
   pinMode(echo, INPUT);
+  myServo.attach(9);
+  Input = readDistance();
+  myServo.write(scenter);
 }
 
 double readDistance(){
@@ -23,12 +40,31 @@ double readDistance(){
   return distance;
 }
 
-double computePID(double setpoint, doublte input){
+double computePID(double setpoint, double input){
+  unsigned long now = millis();
+  double dt = (now - lastTimePID) / 1000;
+  double error = setpoint - input;
+
+  integral += error * dt;
+  double derivative = (error - previousError) / dt; 
+
+  previousError = error;
+  lastTimePID = now;  
+
+  double output = kp * error + ki * integral + kd * derivative; 
   return output;
 }
 
+double customConstrain(double A){
+  if (A <= 45) A = 45;
+  else if (A >= 120) A = 120;
+  return A;
+}
 
 void loop(){
   Input = readDistance();
   Output = computePID(setpoint,Input);
+  ServoOutput = customConstrain(scenter - Output);
+  myServo.write(ServoOutput);
+  delay(50);
 }
