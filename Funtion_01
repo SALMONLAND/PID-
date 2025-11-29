@@ -24,14 +24,11 @@ double readDistance(){
 }
 
 double computePID(double setpoint, doublte input){
-
+  return output;
 }
 
 
 void loop(){
-  float A;
-  A = readDistance();
-  Serial.print(A);
-  Serial.print("\n"); 
-  delay(500);
+  Input = readDistance();
+  Output = computePID(setpoint,Input);
 }
